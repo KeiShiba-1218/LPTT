@@ -4,7 +4,8 @@ import torch
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from torch.nn.modules.conv import Conv2d
-from codes.models.archs.axial_attention import AxialAttention, PositionalEncoding2D
+from codes.models.archs.axial_attention import AxialAttention
+from codes.models.archs.PEG import ConditionalPositionalEncoding
 
 from pytorch_memlab import profile
 
@@ -130,11 +131,9 @@ class ResidualBlock(nn.Module):
 class Trans_low(nn.Module):
     def __init__(self, num_transformer_blocks):
         super(Trans_low, self).__init__()
-        # AxialAttentionに対するPositionalEmbeddingは
-        # 解像度を指定する必要があるので今はまだ実装できない
         self.model = nn.Sequential(
             nn.Conv2d(3, PARAMS['trans_low_dim'], kernel_size=1, bias=False),
-            PositionalEncoding2D(PARAMS['trans_low_dim']),
+            ConditionalPositionalEncoding(PARAMS['trans_low_dim']), 
             *[AxialAttention(dim=PARAMS['trans_low_dim'], num_dimensions=2, heads=PARAMS['trans_low_num_heads'], 
                            dim_heads=None, dim_index=1, sum_axial_out=True) for _ in range(num_transformer_blocks)],
             nn.Conv2d(PARAMS['trans_low_dim'], 3, kernel_size=1, bias=False)
@@ -152,7 +151,7 @@ class Trans_high(nn.Module):
         self.num_high = num_high
         self.model = nn.Sequential(
             nn.Conv2d(9, PARAMS['trans_high_dim'], kernel_size=1, bias=True), 
-            PositionalEncoding2D(PARAMS['trans_high_dim']),
+            ConditionalPositionalEncoding(PARAMS['trans_high_dim']), 
             *[AxialAttention(dim=PARAMS['trans_high_dim'], num_dimensions=2, heads=PARAMS['trans_high_num_heads'], 
                            dim_heads=None, dim_index=1, sum_axial_out=True) for _ in range(num_transformer_blocks)],
             nn.Conv2d(PARAMS['trans_high_dim'], 3, kernel_size=1, bias=True)
