@@ -5,7 +5,7 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from torch.nn.modules.conv import Conv2d
 from codes.models.archs.axial_attention import AxialAttention
-from codes.models.archs.PEG import ConditionalPositionalEncoding
+from codes.models.archs.PEs import ConditionalPositionalEncoding
 
 from pytorch_memlab import profile
 
@@ -131,13 +131,16 @@ class ResidualBlock(nn.Module):
 class Trans_low(nn.Module):
     def __init__(self, num_transformer_blocks):
         super(Trans_low, self).__init__()
-        self.model = nn.Sequential(
-            nn.Conv2d(3, PARAMS['trans_low_dim'], kernel_size=1, bias=False),
-            ConditionalPositionalEncoding(PARAMS['trans_low_dim']), 
-            *[AxialAttention(dim=PARAMS['trans_low_dim'], num_dimensions=2, heads=PARAMS['trans_low_num_heads'], 
-                           dim_heads=None, dim_index=1, sum_axial_out=True) for _ in range(num_transformer_blocks)],
-            nn.Conv2d(PARAMS['trans_low_dim'], 3, kernel_size=1, bias=False)
-            )
+        model = []
+        model.append(nn.Conv2d(3, PARAMS['trans_low_dim'], kernel_size=1, bias=False))
+        for i in range(num_transformer_blocks):
+            model.append(AxialAttention(dim=PARAMS['trans_low_dim'], num_dimensions=2, heads=PARAMS['trans_low_num_heads'], 
+                                        dim_heads=None, dim_index=1, sum_axial_out=True))
+            if i==0:
+                model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_low_dim']))
+        model.append(nn.Conv2d(PARAMS['trans_low_dim'], 3, kernel_size=1, bias=False))
+        
+        self.model = nn.Sequential(*model)
     
     def forward(self, x):
         out = x + self.model(x)
@@ -149,13 +152,16 @@ class Trans_high(nn.Module):
         super(Trans_high, self).__init__()
 
         self.num_high = num_high
-        self.model = nn.Sequential(
-            nn.Conv2d(9, PARAMS['trans_high_dim'], kernel_size=1, bias=True), 
-            ConditionalPositionalEncoding(PARAMS['trans_high_dim']), 
-            *[AxialAttention(dim=PARAMS['trans_high_dim'], num_dimensions=2, heads=PARAMS['trans_high_num_heads'], 
-                           dim_heads=None, dim_index=1, sum_axial_out=True) for _ in range(num_transformer_blocks)],
-            nn.Conv2d(PARAMS['trans_high_dim'], 3, kernel_size=1, bias=True)
-            )
+        model = []
+        model.append(nn.Conv2d(9, PARAMS['trans_high_dim'], kernel_size=1, bias=True))
+        for i in range(num_transformer_blocks):
+            model.append(AxialAttention(dim=PARAMS['trans_high_dim'], num_dimensions=2, heads=PARAMS['trans_high_num_heads'], 
+                                        dim_heads=None, dim_index=1, sum_axial_out=True))
+            if i==0:
+                model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_high_dim']))
+        model.append(nn.Conv2d(PARAMS['trans_high_dim'], 3, kernel_size=1, bias=True))
+        
+        self.model = nn.Sequential(*model)
 
         for i in range(self.num_high):
             ''' transformer
@@ -175,7 +181,6 @@ class Trans_high(nn.Module):
                 nn.Conv2d(16, 3, 1))
             setattr(self, 'trans_mask_block_{}'.format(str(i)), trans_mask_block)
             # '''
-    
     
     def forward(self, x, pyr_original, fake_low):
 

@@ -1,5 +1,5 @@
 # general settings
-name: LPTN_FiveK
+name: LPTN_FiveK_L5
 model_type: LPTNModel
 num_gpu: 2  # set num_gpu: 0 for cpu mode
 manual_seed: 10
@@ -27,7 +27,7 @@ datasets:
 
     # data loader
     use_shuffle: true
-    num_worker_per_gpu: 16
+    num_worker_per_gpu: 2
     batch_size_per_gpu: 32
     dataset_enlarge_ratio: 100
     prefetch_mode: cuda
@@ -43,13 +43,14 @@ datasets:
     io_backend:
 #      type: disk
       type: lmdb
+    gt_size: 256
 
 # network structures
 network_g:
   type: LPTN
   nrb_low: 5
   nrb_high: 3
-  num_high: 3
+  num_high: 5
 
 network_d:
   type: Discriminator
@@ -106,6 +107,10 @@ val:
   metrics:
     psnr:
       type: calculate_psnr
+      crop_border: 4
+      test_y_channel: false
+    ssim:
+      type: calculate_ssim
       crop_border: 4
       test_y_channel: false
 

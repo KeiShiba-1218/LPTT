@@ -9,7 +9,7 @@ import torchinfo
 import time
 from torchvision.transforms import Resize
 import math
-from codes.models.archs.axial_attention import AxialAttention, AxialImageTransformer, AxialPositionalEmbedding, PositionalEncoding2D
+from codes.models.archs.axial_attention import AxialAttention
 
 def lptt_test(): # LPTT動作テスト
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -27,9 +27,11 @@ def lptt_test(): # LPTT動作テスト
 def check_summaries(): # summaryの確認
     lptn = LPTN(num_high=5)
     lptt = LPTT(num_high=5)
-    torchinfo.summary(lptn, input_size=(16, 3, 256, 256))
+    b_size = 1
+    h, w = 256, 256
+    torchinfo.summary(lptn, input_size=(b_size, 3, h, w))
     print('#'*64)
-    torchinfo.summary(lptt, input_size=(16, 3, 256, 256))
+    torchinfo.summary(lptt, input_size=(b_size, 3, h, w))
 
 def check_inference():
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -62,7 +64,6 @@ def axial_test():
     hidden_dim = 16
     model = nn.Sequential(
         nn.Conv2d(3, hidden_dim, kernel_size=1, bias=False),
-        PositionalEncoding2D(hidden_dim),
         AxialAttention(dim=hidden_dim, num_dimensions=2, heads=8, dim_heads=16, dim_index=1, sum_axial_out=True),
         nn.Conv2d(hidden_dim, 3, kernel_size=1, bias=False)
     )
@@ -72,13 +73,8 @@ def axial_test():
     model = model.to(device)
     out = model(x)
     print(out.shape)
-
-def pos_test():
-    x = torch.zeros(16, 32, 64, 64)
-    out = PositionalEncoding2D(dim=32)(x)
-    print(out.shape)
     
 
 if __name__=='__main__':
-    # check_summaries()
-    check_inference()
+    check_summaries()
+    # check_inference()

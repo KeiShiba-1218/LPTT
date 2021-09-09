@@ -30,7 +30,7 @@ network_g:
 
 # path
 path:
-  pretrain_network_g: experiments/LPTT_FiveK_axial_maskconv_L5_addpos/models/net_g_latest.pth
+  pretrain_network_g: experiments/LPTT_FiveK_axial_maskconv_L5_PEG/models/net_g_latest.pth
   strict_load_g: false
 
 val:
