@@ -4,18 +4,27 @@ import torch
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from torch.nn.modules.conv import Conv2d
-from codes.models.archs.axial_attention import AxialAttention, AxialTransformerBlock
+from codes.models.archs.axial_attention import AxialAttention
 from codes.models.archs.PEs import ConditionalPositionalEncoding
 
 from pytorch_memlab import profile
 
+L = 5
 PARAMS = {
+    'trans_low_res': 256//2**L, 
     'trans_low_dim': 64, 
     'trans_low_num_heads': 4, 
+    'trans_low_patch_size': 8,
     'trans_low_mlp_ratio': 4,
+    'trans_high_res': 256//2**(L-1), 
     'trans_high_dim': 32, 
     'trans_high_num_heads': 2, 
+    'trans_high_patch_size': 16,
     'trans_high_mlp_ratio': 4,
+    'trans_mask_dim': 16,
+    'trans_mask_num_heads': 1,
+    'trans_mask_patch_size': 16,
+    'trans_mask_mlp_ratio': 4
 }
 
 
@@ -126,15 +135,12 @@ class Trans_low(nn.Module):
         model.append(nn.Conv2d(3, PARAMS['trans_low_dim'], kernel_size=1, bias=False))
         for i in range(num_transformer_blocks):
             # PEG Posioton: i-1
-            if i==1:
+            if i==0:
                 model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_low_dim']))
             
-            model.append(AxialTransformerBlock(PARAMS['trans_low_dim'],
-                                            num_dimensions=2, heads=PARAMS['trans_low_num_heads'], 
-                                            dim_heads=None, mlp_ratio=PARAMS['trans_low_mlp_ratio'], 
-                                            dropout=0.0, dim_index=1, sum_axial_out=True))
-        
-        model.append(nn.Conv2d(PARAMS['trans_low_dim'], 3, kernel_size=1))
+            model.append(AxialAttention(dim=PARAMS['trans_low_dim'], num_dimensions=2, heads=PARAMS['trans_low_num_heads'], 
+                                        dim_heads=None, dim_index=1, sum_axial_out=True))
+        model.append(nn.Conv2d(PARAMS['trans_low_dim'], 3, kernel_size=1, bias=False))
         
         self.model = nn.Sequential(*model)
     
@@ -152,15 +158,12 @@ class Trans_high(nn.Module):
         model.append(nn.Conv2d(9, PARAMS['trans_high_dim'], kernel_size=1, bias=True))
         for i in range(num_transformer_blocks):
             # PEG Posioton: i-1
-            if i==1:
+            if i==0:
                 model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_high_dim']))
-
-            model.append(AxialTransformerBlock(PARAMS['trans_high_dim'],
-                                            num_dimensions=2, heads=PARAMS['trans_high_num_heads'], 
-                                            dim_heads=None, mlp_ratio=PARAMS['trans_high_mlp_ratio'], 
-                                            dropout=0.0, dim_index=1, sum_axial_out=True))
-
-        model.append(nn.Conv2d(PARAMS['trans_high_dim'], 3, kernel_size=1))
+            
+            model.append(AxialAttention(dim=PARAMS['trans_high_dim'], num_dimensions=2, heads=PARAMS['trans_high_num_heads'], 
+                                        dim_heads=None, dim_index=1, sum_axial_out=True))
+        model.append(nn.Conv2d(PARAMS['trans_high_dim'], 3, kernel_size=1, bias=True))
         
         self.model = nn.Sequential(*model)
 

@@ -2,6 +2,7 @@ import torch
 import torch
 from torch import nn
 from codes.models.archs.LPTT_arch import LPTT
+from codes.models.archs.LPTT_paper_arch import LPTTPaper
 from codes.models.archs.LPTN_arch import LPTN
 from einops import rearrange
 from einops.layers.torch import Rearrange
@@ -13,21 +14,22 @@ from codes.models.archs.axial_attention import AxialAttention
 
 def lptt_test(): # LPTT動作テスト
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
-    h, w = 3840, 2160
-    # h, w = 256, 256
+    # h, w = 3840, 2160
+    h, w = 256, 256
     x = torch.randn(1, 3, h, w).to(device)
     
-    lptt = LPTT(num_high=5).to(device)
-    
-    torchinfo.summary(lptt, input_data=x)
+    # lptt = LPTT(num_high=5).to(device)
+    lptt = LPTTPaper(num_high=5).to(device)
     
     out = lptt(x)
     print(out.size())
 
 def check_summaries(): # summaryの確認
     lptn = LPTN(num_high=5)
-    lptt = LPTT(num_high=5)
+    # lptt = LPTT(num_high=5)
+    lptt = LPTTPaper(num_high=5)
     b_size = 1
+    # h, w = 3840, 2160
     h, w = 256, 256
     torchinfo.summary(lptn, input_size=(b_size, 3, h, w))
     print('#'*64)
@@ -76,5 +78,5 @@ def axial_test():
     
 
 if __name__=='__main__':
+    # lptt_test()
     check_summaries()
-    # check_inference()

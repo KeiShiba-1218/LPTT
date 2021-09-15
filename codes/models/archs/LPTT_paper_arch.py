@@ -160,28 +160,16 @@ class Trans_high(nn.Module):
                                             dim_heads=None, mlp_ratio=PARAMS['trans_high_mlp_ratio'], 
                                             dropout=0.0, dim_index=1, sum_axial_out=True))
 
-        model.append(nn.Conv2d(PARAMS['trans_high_dim'], 3, kernel_size=1))
+        model.append(nn.Conv2d(PARAMS['trans_high_dim'], 1, kernel_size=1))
         
         self.model = nn.Sequential(*model)
 
         for i in range(self.num_high):
-            ''' transformer
             trans_mask_block = nn.Sequential(
-                nn.Conv2d(3, PARAMS['trans_mask_dim'], kernel_size=1, bias=True), 
-                PositionalEncoding2D(PARAMS['trans_mask_dim']),
-                AxialAttention(dim=PARAMS['trans_mask_dim'], num_dimensions=2, heads=PARAMS['trans_mask_num_heads'], 
-                               dim_heads=None, dim_index=1, sum_axial_out=True),
-                nn.Conv2d(PARAMS['trans_mask_dim'], 1, kernel_size=1, bias=True))
-            setattr(self, 'trans_mask_block_{}'.format(str(i)), trans_mask_block)
-            '''
-            
-            # ''' conv
-            trans_mask_block = nn.Sequential(
-                nn.Conv2d(3, 16, 1),
+                nn.Conv2d(1, 16, 1),
                 nn.LeakyReLU(),
-                nn.Conv2d(16, 3, 1))
+                nn.Conv2d(16, 1, 1))
             setattr(self, 'trans_mask_block_{}'.format(str(i)), trans_mask_block)
-            # '''
     
     def forward(self, x, pyr_original, fake_low):
 
@@ -190,9 +178,9 @@ class Trans_high(nn.Module):
 
         for i in range(self.num_high):
             mask = nn.functional.interpolate(mask, size=(pyr_original[-2-i].shape[2], pyr_original[-2-i].shape[3]))
-            result_highfreq = torch.mul(pyr_original[-2-i], mask) + pyr_original[-2-i]
             self.trans_mask_block = getattr(self, 'trans_mask_block_{}'.format(str(i)))
-            result_highfreq = self.trans_mask_block(result_highfreq)
+            mask = self.trans_mask_block(mask)
+            result_highfreq = torch.mul(pyr_original[-2-i], mask)
             setattr(self, 'result_highfreq_{}'.format(str(i)), result_highfreq)
 
         for i in reversed(range(self.num_high)):
@@ -203,9 +191,9 @@ class Trans_high(nn.Module):
 
         return pyr_result
 
-class LPTT(nn.Module):
+class LPTTPaper(nn.Module):
     def __init__(self, nrb_low=5, nrb_high=3, num_high=3):
-        super(LPTT, self).__init__()
+        super(LPTTPaper, self).__init__()
 
         self.lap_pyramid = Lap_Pyramid_Conv(num_high)
         trans_low = Trans_low(nrb_low)

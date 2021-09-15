@@ -26,11 +26,11 @@ network_g:
   type: LPTT
   nrb_low: 5
   nrb_high: 3
-  num_high: 5
+  num_high: 3
 
 # path
 path:
-  pretrain_network_g: experiments/LPTT_FiveK_axial_maskconv_L5_PEGk5/models/net_g_latest.pth
+  pretrain_network_g: experiments/LPTT_FiveK_L3_PEG0k3/models/net_g_latest.pth
   # pretrain_network_g: experiments/LPTT_FiveK_axial_maskconv_L5/models/net_g_latest.pth
   strict_load_g: false
 

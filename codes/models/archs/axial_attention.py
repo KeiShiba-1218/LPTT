@@ -3,6 +3,7 @@ from torch import nn
 from operator import itemgetter
 import math
 from codes.models.archs.axial_attention_util import ReversibleSequence
+from torch.nn.modules.dropout import Dropout
 
 # helper functions
 
@@ -168,7 +169,7 @@ class AxialAttention(nn.Module):
 
     def forward(self, x):
         assert len(x.shape) == self.total_dimensions, 'input tensor does not have the correct number of dimensions'
-        assert x.shape[self.dim_index] == self.dim, 'input tensor does not have the correct input dimension'
+        assert x.shape[self.dim_index] == self.dim, f'input tensor does not have the correct input dimension {x.shape[self.dim_index]} vs {self.dim}'
 
         if self.sum_axial_out:
             return sum(map(lambda axial_attn: axial_attn(x), self.axial_attentions))
@@ -176,6 +177,28 @@ class AxialAttention(nn.Module):
         out = x
         for axial_attn in self.axial_attentions:
             out = axial_attn(out)
+        return out
+
+class AxialTransformerBlock(nn.Module):
+    def __init__(self, dim, num_dimensions=2, heads=8, dim_heads=None, mlp_ratio=4, dropout=0.0, dim_index=-1, sum_axial_out=True):
+        super().__init__()
+        self.attention_block = nn.Sequential(
+            ChanLayerNorm(dim),
+            AxialAttention(dim, num_dimensions, heads, dim_heads, dim_index, sum_axial_out),
+            nn.Dropout(dropout)
+        )
+        self.feed_forward = nn.Sequential(
+            ChanLayerNorm(dim),
+            nn.Conv2d(dim, dim*mlp_ratio, kernel_size=1),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Conv2d(dim*mlp_ratio, dim, kernel_size=1),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x):
+        x = x + self.attention_block(x)
+        out = x + self.feed_forward(x)
         return out
 
 # axial image transformer
