@@ -1,6 +1,6 @@
 # general settings
-name: LPTN_FiveK_paper_L3
-model_type: LPTNModel
+name: LPTT_FiveK_L4
+model_type: LPTTModel
 num_gpu: 2  # set num_gpu: 0 for cpu mode
 manual_seed: 10
 
@@ -43,14 +43,15 @@ datasets:
     io_backend:
 #      type: disk
       type: lmdb
+    
     gt_size: 256 # training size
 
 # network structures
 network_g:
-  type: LPTNPaper
+  type: LPTT
   nrb_low: 5
   nrb_high: 3
-  num_high: 3
+  num_high: 4
 
 network_d:
   type: Discriminator

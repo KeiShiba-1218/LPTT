@@ -16,6 +16,7 @@ PARAMS = {
     'trans_high_dim': 32, 
     'trans_high_num_heads': 2, 
     'trans_high_mlp_ratio': 4,
+    'PEG_position': -1
 }
 
 
@@ -126,7 +127,7 @@ class Trans_low(nn.Module):
         model.append(nn.Conv2d(3, PARAMS['trans_low_dim'], kernel_size=1, bias=False))
         for i in range(num_transformer_blocks):
             # PEG Posioton: i-1
-            if i==1:
+            if i==PARAMS['PEG_position']+1:
                 model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_low_dim']))
             
             model.append(AxialTransformerBlock(PARAMS['trans_low_dim'],
@@ -152,7 +153,7 @@ class Trans_high(nn.Module):
         model.append(nn.Conv2d(9, PARAMS['trans_high_dim'], kernel_size=1, bias=True))
         for i in range(num_transformer_blocks):
             # PEG Posioton: i-1
-            if i==1:
+            if i==PARAMS['PEG_position']+1:
                 model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_high_dim']))
 
             model.append(AxialTransformerBlock(PARAMS['trans_high_dim'],
