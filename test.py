@@ -14,28 +14,28 @@ from codes.models.archs.axial_attention import AxialAttention
 
 def lptt_test(): # LPTT動作テスト
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
-    h, w = 6000, 4000
+    # h, w = 6000, 4000
     # h, w = 3840, 2160
-    # h, w = 256, 256
+    h, w = 256, 256
     x = torch.randn(1, 3, h, w).to(device)
     
-    lptt = LPTT(num_high=5).to(device)
+    lptt = LPTT(num_high=3).to(device)
     # lptt = LPTTPaper(num_high=5).to(device)
     
     out = lptt(x)
     print(out.size())
 
 def check_summaries(): # summaryの確認
-    lptn = LPTN(num_high=4)
-    lptt = LPTT(num_high=4)
+    lptn = LPTN(num_high=6)
+    lptt = LPTT(num_high=6)
     b_size = 1
-    # h, w = 256, 256
+    h, w = 256, 256
     # h, w = 720, 480 # 480p
     # h, w = 1280, 720 # 720p
     # h, w = 1920, 1080 # 1080p
     # h, w = 2560, 1440 # 2K
     # h, w = 3840, 2160 # 4K
-    h, w = 7680, 4320 # 8K
+    # h, w = 7680, 4320 # 8K
     # h, w = 8192, 8192 # Super Big Size
     torchinfo.summary(lptn, input_size=(b_size, 3, h, w))
     print('#'*64)
@@ -86,3 +86,4 @@ def axial_test():
 if __name__=='__main__':
     # lptt_test()
     check_summaries()
+

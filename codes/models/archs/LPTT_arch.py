@@ -16,7 +16,8 @@ PARAMS = {
     'trans_high_dim': 32, 
     'trans_high_num_heads': 2, 
     'trans_high_mlp_ratio': 4,
-    'PEG_position': -1
+    'PEG_position': -1,
+    'PEG_k': 3
 }
 
 
@@ -128,7 +129,7 @@ class Trans_low(nn.Module):
         for i in range(num_transformer_blocks):
             # PEG Posioton: i-1
             if i==PARAMS['PEG_position']+1:
-                model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_low_dim']))
+                model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_low_dim'], k=PARAMS['PEG_k']))
             
             model.append(AxialTransformerBlock(PARAMS['trans_low_dim'],
                                             num_dimensions=2, heads=PARAMS['trans_low_num_heads'], 
@@ -154,7 +155,7 @@ class Trans_high(nn.Module):
         for i in range(num_transformer_blocks):
             # PEG Posioton: i-1
             if i==PARAMS['PEG_position']+1:
-                model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_high_dim']))
+                model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_high_dim'], k=PARAMS['PEG_k']))
 
             model.append(AxialTransformerBlock(PARAMS['trans_high_dim'],
                                             num_dimensions=2, heads=PARAMS['trans_high_num_heads'], 
@@ -166,16 +167,6 @@ class Trans_high(nn.Module):
         self.model = nn.Sequential(*model)
 
         for i in range(self.num_high):
-            ''' transformer
-            trans_mask_block = nn.Sequential(
-                nn.Conv2d(3, PARAMS['trans_mask_dim'], kernel_size=1, bias=True), 
-                PositionalEncoding2D(PARAMS['trans_mask_dim']),
-                AxialAttention(dim=PARAMS['trans_mask_dim'], num_dimensions=2, heads=PARAMS['trans_mask_num_heads'], 
-                               dim_heads=None, dim_index=1, sum_axial_out=True),
-                nn.Conv2d(PARAMS['trans_mask_dim'], 1, kernel_size=1, bias=True))
-            setattr(self, 'trans_mask_block_{}'.format(str(i)), trans_mask_block)
-            '''
-            
             # ''' conv
             trans_mask_block = nn.Sequential(
                 nn.Conv2d(3, 16, 1),

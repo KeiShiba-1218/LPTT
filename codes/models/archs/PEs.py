@@ -26,6 +26,7 @@ class PositionalEncoding2D(nn.Module):
 class ConditionalPositionalEncoding(nn.Module):
     def __init__(self, dim, k=3, d=1):
         super().__init__()
+        assert k%2==1, 'k must be odd.'
         self.proj = nn.Conv2d(dim, dim, kernel_size=k, stride=1, padding=k//2, dilation=d, groups=dim)
     
     def forward(self, x):
