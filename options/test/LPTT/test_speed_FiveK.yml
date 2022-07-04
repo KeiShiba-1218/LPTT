@@ -26,20 +26,20 @@ network_g:
   type: LPTT
   nrb_low: 5
   nrb_high: 3
-  num_high: 3
+  num_high: 6
 
 # path
 path:
-  pretrain_network_g: experiments/LPTT_FiveK_L3_PEG-1k9/models/net_g_latest.pth
+  pretrain_network_g: experiments/LPTT_FiveK_L6_PEG-1k3/models/net_g_latest.pth
   # pretrain_network_g: experiments/LPTT_FiveK_L5_PEG0k3/models/net_g_latest.pth
   strict_load_g: false
 
 val:
   num_img: 50
   times_per_img: 50
-  # fix_img_size: [720, 480] # 480p
-  # fix_img_size: [1280, 720] # 720p
-  # fix_img_size: [1920, 1080] # 1080p
-  # fix_img_size: [2560, 1440] # 2K
-  # fix_img_size: [3840, 2160] # testing speed on specific image size. set to None to test on original size
-  # fix_img_size: [7680, 4320] # 8K
+  fix_img_size: [720, 480] # 480p
+  #fix_img_size: [1280, 720] # 720p
+  #fix_img_size: [1920, 1080] # 1080p
+  #fix_img_size: [2560, 1440] # 2K
+  #fix_img_size: [3840, 2160] # testing speed on specific image size. set to None to test on original size
+  #fix_img_size: [7680, 4320] # 8K
