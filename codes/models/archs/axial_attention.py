@@ -2,7 +2,6 @@ import torch
 from torch import nn
 from operator import itemgetter
 import math
-from codes.models.archs.axial_attention_util import ReversibleSequence
 from torch.nn.modules.dropout import Dropout
 
 # helper functions
@@ -200,33 +199,3 @@ class AxialTransformerBlock(nn.Module):
         x = x + self.attention_block(x)
         out = x + self.feed_forward(x)
         return out
-
-# axial image transformer
-
-class AxialImageTransformer(nn.Module):
-    def __init__(self, dim, depth, heads = 8, dim_heads = None, dim_index = 1, reversible = True, axial_pos_emb_shape = None):
-        super().__init__()
-        permutations = calculate_permutations(2, dim_index)
-
-        get_ff = lambda: nn.Sequential(
-            ChanLayerNorm(dim),
-            nn.Conv2d(dim, dim * 4, 3, padding = 1),
-            nn.LeakyReLU(inplace=True),
-            nn.Conv2d(dim * 4, dim, 3, padding = 1)
-        )
-
-        self.pos_emb = AxialPositionalEmbedding(dim, axial_pos_emb_shape, dim_index) if exists(axial_pos_emb_shape) else nn.Identity()
-
-        layers = nn.ModuleList([])
-        for _ in range(depth):
-            attn_functions = nn.ModuleList([PermuteToFrom(permutation, PreNorm(dim, SelfAttention(dim, heads, dim_heads))) for permutation in permutations])
-            conv_functions = nn.ModuleList([get_ff(), get_ff()])
-            layers.append(attn_functions)
-            layers.append(conv_functions)            
-
-        execute_type = ReversibleSequence if reversible else Sequential
-        self.layers = execute_type(layers)
-
-    def forward(self, x):
-        x = self.pos_emb(x)
-        return self.layers(x)
