@@ -14,8 +14,8 @@ def inference(source_path='./test_images/source', out_path=None, network_path=No
     
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
     
-    # net = LPTT(num_high=L).to(device)
-    net = LPTN(num_high=L).to(device)
+    net = LPTT(num_high=L).to(device)
+    # net = LPTN(num_high=L).to(device)
     load_net = torch.load(network_path)
     net.load_state_dict(load_net, strict=False)
     
@@ -23,7 +23,7 @@ def inference(source_path='./test_images/source', out_path=None, network_path=No
     
     net.eval()
     for imgpath in tqdm(images):
-        imgname = os.path.basename(imgpath)
+        imgname = os.path.splitext(os.path.basename(imgpath))[0] + '.png'
         with Image.open(imgpath) as img:
             img = img.convert('RGB')
             # print(imgname, img.size)
@@ -37,7 +37,7 @@ def inference(source_path='./test_images/source', out_path=None, network_path=No
             img = np.clip(img, a_min=0.0, a_max=1.0) # これがないと真っ赤だったり真っ青な部分が出てしまう
             img = (img*255).astype(np.uint8)
             img = Image.fromarray(img)
-            img.save(os.path.join(out_path, imgname), 'JPEG')
+            img.save(os.path.join(out_path, imgname))
             exit()
 
 configs = {
@@ -60,6 +60,6 @@ configs = {
 }
 
 if __name__=='__main__':
-    config = configs['LPTN_L6']
+    config = configs['LPTT_L6']
     print(config)
     inference(out_path=config[0], network_path=config[1], L=6)
