@@ -15,9 +15,9 @@ git clone https://github.com/KeiShiba-1218/LPTT
 cd LPTT
 ```
 
-- Install dependencies. (Python 3 + NVIDIA GPU + CUDA. Please use Anaconda)
+- Install dependencies. (Python 3 + NVIDIA GPU + CUDA. Recommend to use Anaconda)
 ```bash
-conda env create -f=env_anaconda.yml
+pip install -r requirement.txt
 ```
 
 - Download dataset.
