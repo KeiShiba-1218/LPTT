@@ -17,3 +17,10 @@ PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=3 python codes/test.py -opt o
 PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=3 python codes/test_speed.py -opt options/test/LPTT/test_speed_FiveK.yml
 
 # CUDA_VISIBLE_DEVICES=3 python inference.py
+
+cp experiments/LPTT_FiveK_L3_PEG-1k9/models/net_g_latest.pth \
+    experiments/LPTT_FiveK_L4_PEG-1k9/models/net_g_latest.pth \
+    experiments/LPTT_FiveK_L5_PEG-1k5/models/net_g_latest.pth \
+    experiments/LPTT_FiveK_L6_PEG-1k3/models/net_g_latest.pth \
+
+cp experiments/LPTT_FiveK_L6_PEG-1k3/models/net_g_latest.pth pretrained/net_g_latest_L6.pth 
