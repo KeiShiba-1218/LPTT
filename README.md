@@ -62,9 +62,5 @@ Evaluating files (logs and visualizations) will be saved in the directory ```./r
 
 - Specify the ```path: pretrain_network_g``` in ```test_FiveK.yml``` and run evaluation.
 
-### License
-
-This project is released under the Apache 2.0 license.
-
 ### Acknowledgement
 We borrowed the many codes from the great [LPTN](https://github.com/csjliang/LPTN) repo.
