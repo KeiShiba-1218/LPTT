@@ -67,4 +67,4 @@ Evaluating files (logs and visualizations) will be saved in the directory ```./r
 This project is released under the Apache 2.0 license.
 
 ### Acknowledgement
-We borrowed the many codes from the great [LPTN](https://github.com/csjliang/LPTN) project.
+We borrowed the many codes from the great [LPTN](https://github.com/csjliang/LPTN) repo.
