@@ -7,48 +7,6 @@ from torch.nn.modules.conv import Conv2d
 from codes.models.archs.axial_attention import AxialAttention, AxialTransformerBlock
 from codes.models.archs.PEs import ConditionalPositionalEncoding
 
-from pytorch_memlab import profile
-
-PARAMS = {
-    'trans_low_dim': 64, 
-    'trans_low_num_heads': 4, 
-    'trans_low_mlp_ratio': 4,
-    'trans_high_dim': 32, 
-    'trans_high_num_heads': 2, 
-    'trans_high_mlp_ratio': 4,
-    'PEG_position': -1,
-    'PEG_k': 3
-}
-
-
-class Lap_Pyramid_Bicubic(nn.Module):
-    """
-
-    """
-    def __init__(self, num_high=3):
-        super(Lap_Pyramid_Bicubic, self).__init__()
-
-        self.interpolate_mode = 'bicubic'
-        self.num_high = num_high
-
-    def pyramid_decom(self, img):
-        current = img
-        pyr = []
-        for i in range(self.num_high):
-            down = nn.functional.interpolate(current, size=(current.shape[2] // 2, current.shape[3] // 2), mode=self.interpolate_mode, align_corners=True)
-            up = nn.functional.interpolate(down, size=(current.shape[2], current.shape[3]), mode=self.interpolate_mode, align_corners=True)
-            diff = current - up
-            pyr.append(diff)
-            current = down
-        pyr.append(current)
-        return pyr
-
-    def pyramid_recons(self, pyr):
-        image = pyr[-1]
-        for level in reversed(pyr[:-1]):
-            image = F.interpolate(image, size=(level.shape[2], level.shape[3]), mode=self.interpolate_mode, align_corners=True) + level
-        return image
-
 class Lap_Pyramid_Conv(nn.Module):
     def __init__(self, num_high=3):
         super(Lap_Pyramid_Conv, self).__init__()
@@ -122,21 +80,22 @@ class ResidualBlock(nn.Module):
         return x + self.block(x)
 
 class Trans_low(nn.Module):
-    def __init__(self, num_transformer_blocks):
+    def __init__(self, num_transformer_blocks, PEG_k):
         super(Trans_low, self).__init__()
+        PEG_position = -1
         model = []
-        model.append(nn.Conv2d(3, PARAMS['trans_low_dim'], kernel_size=1, bias=False))
+        model.append(nn.Conv2d(3, 64, kernel_size=1, bias=False))
         for i in range(num_transformer_blocks):
             # PEG Posioton: i-1
-            if i==PARAMS['PEG_position']+1:
-                model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_low_dim'], k=PARAMS['PEG_k']))
+            if i==PEG_position+1:
+                model.append(ConditionalPositionalEncoding(dim=64, k=PEG_k))
             
-            model.append(AxialTransformerBlock(PARAMS['trans_low_dim'],
-                                            num_dimensions=2, heads=PARAMS['trans_low_num_heads'], 
-                                            dim_heads=None, mlp_ratio=PARAMS['trans_low_mlp_ratio'], 
+            model.append(AxialTransformerBlock(64,
+                                            num_dimensions=2, heads=4, 
+                                            dim_heads=None, mlp_ratio=4, 
                                             dropout=0.0, dim_index=1, sum_axial_out=True))
         
-        model.append(nn.Conv2d(PARAMS['trans_low_dim'], 3, kernel_size=1))
+        model.append(nn.Conv2d(64, 3, kernel_size=1))
         
         self.model = nn.Sequential(*model)
     
@@ -146,23 +105,23 @@ class Trans_low(nn.Module):
         return out
 
 class Trans_high(nn.Module):
-    def __init__(self, num_transformer_blocks, num_high=3):
+    def __init__(self, num_transformer_blocks, num_high=3, PEG_k=9):
         super(Trans_high, self).__init__()
-
+        PEG_position = -1
         self.num_high = num_high
         model = []
-        model.append(nn.Conv2d(9, PARAMS['trans_high_dim'], kernel_size=1, bias=True))
+        model.append(nn.Conv2d(9, 32, kernel_size=1, bias=True))
         for i in range(num_transformer_blocks):
             # PEG Posioton: i-1
-            if i==PARAMS['PEG_position']+1:
-                model.append(ConditionalPositionalEncoding(dim=PARAMS['trans_high_dim'], k=PARAMS['PEG_k']))
+            if i==PEG_position+1:
+                model.append(ConditionalPositionalEncoding(dim=32, k=PEG_k))
 
-            model.append(AxialTransformerBlock(PARAMS['trans_high_dim'],
-                                            num_dimensions=2, heads=PARAMS['trans_high_num_heads'], 
-                                            dim_heads=None, mlp_ratio=PARAMS['trans_high_mlp_ratio'], 
+            model.append(AxialTransformerBlock(32,
+                                            num_dimensions=2, heads=2, 
+                                            dim_heads=None, mlp_ratio=4, 
                                             dropout=0.0, dim_index=1, sum_axial_out=True))
 
-        model.append(nn.Conv2d(PARAMS['trans_high_dim'], 3, kernel_size=1))
+        model.append(nn.Conv2d(32, 3, kernel_size=1))
         
         self.model = nn.Sequential(*model)
 
@@ -198,10 +157,12 @@ class Trans_high(nn.Module):
 class LPTT(nn.Module):
     def __init__(self, nrb_low=5, nrb_high=3, num_high=3):
         super(LPTT, self).__init__()
+        PEG_k_dict = {3: 9, 4: 9, 5: 5, 6: 3}
+        PEG_k = PEG_k_dict[num_high]
 
         self.lap_pyramid = Lap_Pyramid_Conv(num_high)
-        trans_low = Trans_low(nrb_low)
-        trans_high = Trans_high(nrb_high, num_high=num_high)
+        trans_low = Trans_low(nrb_low, PEG_k)
+        trans_high = Trans_high(nrb_high, num_high, PEG_k)
         self.trans_low = trans_low.cuda()
         self.trans_high = trans_high.cuda()
 
